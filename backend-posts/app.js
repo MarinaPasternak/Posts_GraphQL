@@ -7,6 +7,10 @@ const multer = require('multer');
 
 const MONGODB_URI = `mongodb+srv://marynaUser:${process.env.MONGO_DB_USER_KEY}@cluster0.ddbf7zc.mongodb.net/?appName=Cluster0`;
 
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolver = require('./graphql/resolvers');
+const { graphqlHTTP } = require('express-graphql');
+
 const app = express();
 
 const fileStorage = multer.diskStorage({
@@ -46,6 +50,11 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
+
+app.use('./graphql', graphqlHTTP({
+  schema: graphqlSchema,
+  rootValue: graphqlResolver  
+}))
 
 app.use((error, req, res, next) => {
   console.log(error);
