@@ -1,36 +1,22 @@
-const { buildSchema } = require('graphql');
+const User = require('../models/user');
 
-module.exports = buildSchema(`
-    type Post {
-        _id: ID!
-        title: String!
-        content: String!
-        imageUrl: String!
-        creator: User!
-        createdAt: String!
-        updatedAt: String!
-    }
+module.exports = {
+    createUser: async function({ userInput }, req) {
+        const exisitingUser = await User.findOne({email: userInput.email});
 
-    type User {
-        _id: ID!
-        email: String!
-        name: String!
-        password: String
-        status: String!
-        posts: [Post!]!
-    }
+        if (exisitingUser) {
+            const error = new Error("User exists already!");
+            throw error;
+        }
 
-    input UserInputData {
-        email: String!
-        name: String!
-        password: String!
-    }
+        const hashedPassword = await bcrypt.hash(userInput.password, 12);
+        const user = new User({
+            email: userInput.email,
+            name: userInput.name,
+            password: hashedPassword
+        });
 
-    type RootMutation {
-        createUser(userInput: UserInputData): User!
+        const createdUser = await user.save();
+        return {...createdUser._doc, _id: createdUser._id.toString(), }
     }
-
-    schema {
-        mutation: RootMutation
-    }
-`);
+};
