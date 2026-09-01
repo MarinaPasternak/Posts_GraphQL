@@ -55,7 +55,7 @@ class Feed extends Component {
       this.setState({ postPage: page });
     }
 
-    const graphqlQuery = { query: ` query { posts { _id title content creator { name } imageUrl createdAt } totalPosts } ` };
+    const graphqlQuery = { query: ` query { posts(page: ${page}) { _id title content creator { name } imageUrl createdAt } totalPosts } ` };
 
     fetch('http://localhost:8080/graphql', { 
       method: 'POST', 
