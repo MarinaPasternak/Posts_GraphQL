@@ -54,29 +54,32 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('http://localhost:8080/feed/posts?page=' + page, {
-      headers: {
-        Authorization: 'Bearer ' + this.props.token
-      }
-    })
-      .then(res => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch posts.');
-        }
-        return res.json();
-      })
-      .then(resData => {
-        this.setState({
-          posts: resData.posts.map(post => {
-            return {
-              ...post,
-              imagePath: post.imageUrl
-            };
-          }),
-          totalPosts: resData.totalItems,
-          postsLoading: false
-        });
-      })
+
+    const graphqlQuery = { query: ` query { posts { _id title content creator { name } imageUrl createdAt } totalPosts } ` };
+
+    fetch('http://localhost:8080/graphql', { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json', 
+        Authorization: 'Bearer ' + this.props.token 
+      }, 
+      body: JSON.stringify(graphqlQuery) 
+    }) 
+    .then(res => { 
+      if (res.status !== 200) { 
+        throw new Error('Failed to fetch posts.'); 
+      } 
+      
+      return res.json(); 
+    }) 
+    .then(resData => 
+      { 
+        this.setState({ 
+          posts: resData.data.posts.map(post => ({ ...post, imagePath: post.imageUrl })), 
+          totalPosts: resData.data.totalPosts, 
+          postsLoading: false 
+        }); 
+      }) 
       .catch(this.catchError);
   };
 
@@ -180,7 +183,17 @@ class Feed extends Component {
           createdAt: resData.data.createPost.createdAt
         };
         this.setState(prevState => {
+          let updatedPosts = [...prevState.posts];
+          if (prevState.editPost) {
+            const postIndex = prevState.posts.findIndex(
+              p => p._id === prevState.editPost._id
+            );
+            updatedPosts[postIndex] = post;
+          } else {
+            updatedPosts.unshift(post);
+          }
           return {
+            posts: updatedPosts,
             isEditing: false,
             editPost: null,
             editLoading: false
